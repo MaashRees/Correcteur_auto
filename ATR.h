@@ -4,6 +4,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include "Liste.h"
 
 typedef struct ntr{
     char racine;
@@ -23,8 +24,14 @@ int ajout(ATR * A, char * mot, int cmp);
 int inserer_aux(ATR * A, char * mot, int cmp);
 int inserer_dans_ATR(ATR * A, char * mot);
 
+int recherche(ATR A, char * mot, int cmp);
+
 void supprimer_dans_ATR(ATR * A, char * mot);
 
 void afficher_ATR(ATR A);
+
+ATR remplis_arbre(FILE * fichier);
+
+Liste correction(ATR A,FILE * file);
 
 #endif

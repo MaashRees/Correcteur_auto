@@ -42,15 +42,15 @@ int ajout(ATR * A, char * mot, int cmp){
         if((*A) == NULL){
             return 0;
         }
-        if(cmp == strlen(mot)){
+    }
+    if(cmp == strlen(mot)){
             printf("\n");
             return 1;
-        }
-        (*A)->racine = mot[cmp];
-        printf("%c", (*A)->racine);
-        return ajout(&((*A)->fils), mot, cmp + 1);
     }
-    return 0;
+    (*A)->racine = mot[cmp];
+    printf("%c", (*A)->racine);
+    return ajout(&((*A)->fils), mot, cmp + 1);
+    
 }
 
 int inserer_aux(ATR * A, char * mot, int cmp){
@@ -61,7 +61,7 @@ int inserer_aux(ATR * A, char * mot, int cmp){
         return ajout(A, mot, cmp);
     }
     if((*A)->racine == '\0'){
-        return ajout(&((*A)->fd), mot, cmp);
+        return inserer_aux(&((*A)->fd), mot, cmp);
     } else {
         if((*A)->racine == mot[cmp]){
             return inserer_aux(&((*A)->fils), mot, cmp  + 1);
@@ -87,36 +87,79 @@ int inserer_dans_ATR(ATR * A, char * mot){
     return 0;
 }
 
+int recherche(ATR A, char * mot, int cmp){
 
-void supprimer_dans_ATR(ATR * A, char * mot){
-    
+    if(A == NULL){
+        return 0;
+    }
+    printf("le compteur %d , A->racine = %c\n", cmp, A->racine);
+    if((cmp == strlen(mot))){
+        if(A->racine == '\0'){
+            return 1;
+        } else{
+            return 0;
+        }
+    }
+
+    if(A->racine == '\0' && A->fd == NULL){
+        return 0;
+    }
+    if(A->racine == mot[cmp]){
+        return recherche(A->fils, mot, cmp + 1);
+    }if(A->racine > mot[cmp]){
+        return recherche(A->fg, mot, cmp);
+    }
+    if(A->racine < mot[cmp]){
+        return recherche(A->fd, mot, cmp);
+    }
+    return 0;
 }
 
-void afficher_ATR(ATR A);
+
+void supprimer_dans_ATR(ATR * A, char * mot){
+
+}
+
+void afficher_ATR(ATR A){
+
+}
+
+ATR remplis_arbre(FILE * fichier){
+
+  char mot[20];
+  ATR arbre;
+  arbre = creer_ATR_vide();
+
+  while(fscanf(fichier,"%s",mot)!=EOF){
+    inserer_dans_ATR(&arbre, mot);
+  }
+  rewind(fichier);
+  return arbre;
+
+}
+
+Liste correction(ATR A,FILE * file){
 
 
-int main(int argc, char * argv[]){
+   
+    Liste erreur = NULL;
+    char mot[20];
 
-    ATR arbre;
-    int insert;
-    arbre = creer_ATR_vide();
-    
 
-    if(arbre){
-        
-        insert = inserer_dans_ATR(&arbre, "le");
-        fprintf(stderr, "insertion 1 : %d\n", insert);
-        
-        insert = inserer_dans_ATR(&arbre, "dla");
-        fprintf(stderr, "insertion 2 : %d\n", insert);
+      /*file = fopen("text","r");*/
+    if(file == NULL){fprintf(stderr," fichier non ouvert");return;}
 
-        insert = inserer_dans_ATR(&arbre, "le");
-        fprintf(stderr, "insertion 2 : %d\n", insert);
+        /* for chauqe mot m presnet dans a_cooriger do*/
+    while(fscanf(file,"%s",mot)!=EOF){
+          /* if m est pas dans dico then*/
 
-        insert = inserer_dans_ATR(&arbre, "la");
-        fprintf(stderr, "insertion 2 : %d\n", insert);
+        if(!recherche(A, mot,0)){
+            printf("%s\n", mot);
+          /*inserer m en tete de la liste chainee erreurs*/
+            inserer_en_tete(&erreur, mot);
+        }
 
-        liberer_ATR(&arbre);
     }
-    return 0;   
+    rewind(file);
+    return erreur;
 }
