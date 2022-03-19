@@ -191,36 +191,138 @@ int recherche(ATR A, char * mot, int cmp){
     return 0;
 }
 
+int inserer_arbre(ATR * A, ATR droite){
+    if(droite == NULL){
+        return 2;
+    }
+    if((*A)->fd == NULL){
+        (*A)->fd = droite;
+        return 1;
+    }
+    return inserer_arbre(&((*A)->fd), droite);
+}
 
-void supprimer_dans_ATR(ATR * A, char * mot){
+int supprimer_dans_ATR_aux(ATR * A, char * mot, int cmp){
+    int sup_l;
+    ATR tmp;
+    if(*A == NULL){
+        return 0;
+    } 
+    if(cmp == strlen(mot)){
+        if((*A)->racine == '\0'){
+            printf("Mot trouvé\n");
+            printf("Suppression caractere vide\n");
+            tmp = (*A)->fd; // recuperation de la partie droite qu'elle soit null ou pas
+            free((*A));
+            (*A) = tmp;
+            printf("---------------------------------------\n");
+            return 1;
+        } else{
+            printf("Arbre trop grand - Mot non trouvé\n");
+            printf("---------------------------------------\n");
+            return 0;
+        }
+    } 
+
+    if((*A)->racine == '\0' && (*A)->fd == NULL){
+        printf("Arbre trop petit - Mot non trouvé\n");
+        printf("---------------------------------------\n");
+        return 0;
+    }
+    if((*A)->racine == mot[cmp]){
+        printf("Recherche au millieu , racine : %c, car recherché : %c-\n", (*A)->racine, mot[cmp]);
+        printf("---------------------------------------\n");
+        sup_l = supprimer_dans_ATR_aux(&(*A)->fils, mot, cmp + 1);
+        if(sup_l){
+            if((*A)->fils){ //on a un mot apres le mot à supprimer, ex sup de de alors qu'on a denise t on a fait remonté n au lieu de mettre à null
+                printf("on a un mot apres le mot à supprimer\n");
+                printf("---------------------------------------\n");
+                return 1;
+            }
+            fprintf(stderr, "part1\n\n");
+            printf("suppression de la lettre : %c fg : %p fd : %p\n", (*A)->racine, (*A)->fg, (*A)->fd);
+            printf("cmpsq = %d, mot : %s \n", cmp, mot);
+            tmp = *A;
+            fprintf(stderr, "part2\n\n");
+            if((*A)->fg){
+                fprintf(stderr, "part3\n\n");
+                printf("inserer arbre droit dans gauche : %d\n", inserer_arbre(&((*A)->fg), (*A)->fd));
+                (*A) = (*A)->fg;
+                tmp->fg = tmp->fd = tmp->fils= NULL;
+                printf("---------------------------------------\n");
+            } else{
+                fprintf(stderr, "part4\n\n");
+                printf("Pas de fils gauche\n");
+                (*A) = (*A)->fd;
+                tmp->fg = tmp->fd = tmp->fils= NULL;
+                printf("---------------------------------------\n");
+            }
+            fprintf(stderr, "part5\n\n");
+            //printf("new_caractere : %c\n", (*A)->racine);
+            fprintf(stderr, "part6\n\n");
+        }
+        return sup_l;
+    }
+    if((*A)->racine > mot[cmp]){
+        printf("Recherche a gauche , racine : %c, car recherché : %c-\n", (*A)->racine, mot[cmp]);
+        printf("---------------------------------------\n");
+        return supprimer_dans_ATR_aux(&((*A)->fg), mot, cmp);
+    }
+    if((*A)->racine < mot[cmp]){
+        printf("Recherche à droite, racine : %c, car recherché : %c-\n", (*A)->racine, mot[cmp]);
+        printf("---------------------------------------\n");
+        return supprimer_dans_ATR_aux(&((*A)->fd), mot, cmp);
+    }
+    return 0;
 
 }
 
-void afficher_ATR(ATR A)
-{
-    if (A != NULL)
-    {
-        printf("Lettre : %c\n", A->racine);
-        printf("Noeud : %p\n", A);
-        printf("Fils : %p\n", A->fils);
-        printf("FG : %p\n", A->fg);
-        printf("FD : %p\n", A->fd);
-        printf("\n");
-        if (A->fils)
-        {
-            afficher_ATR(A->fils);
-        }
-        if (A->fg)
-        {
-            afficher_ATR(A->fg);
-        }
-        if (A->fd)
-        {
-            afficher_ATR(A->fd);
+void supprimer_dans_ATR(ATR * A, char * mot){
+    int cmp, sup;
+    cmp = 0;
+    if(*A){
+        printf("mot à supprimer : %s\n\n", mot);
+        sup = supprimer_dans_ATR_aux(A, mot, cmp);
+        if(sup){
+            printf("\nMot trouvé et supprimé normalement\n\n\n");
         }
     }
 }
 
+void affiche_atr_aux(ATR A, char * mot, int cmp){
+    if(A){
+        if(A->fg){
+            affiche_atr_aux(A->fg, mot, cmp);
+        }
+        /*if(A->racine == '\0'){
+            mot[cmp] = '\0';
+            printf("%s\n", mot);
+            affiche_atr_aux(A->fd, mot, cmp);
+        } else {
+            mot[cmp] = A->racine;
+            affiche_atr_aux(A->fils, mot, cmp + 1);
+        }*/
+        if(A->racine != '\0'){
+            mot[cmp] = A->racine;
+            affiche_atr_aux(A->fils, mot, cmp + 1);
+        } else {
+            mot[cmp] = '\0';
+            printf("%s\n", mot);
+        }
+        affiche_atr_aux(A->fd, mot, cmp);
+    }
+}
+void afficher_ATR(ATR A){
+    char mot[26];
+    int cmp;
+
+    cmp = 0;
+    if(A == NULL){
+        return ;
+    } else {
+        affiche_atr_aux(A, mot, cmp);
+    }
+}
 
 ATR remplis_arbre(FILE * fichier){
 
@@ -309,7 +411,7 @@ void  creePDF(ATR a) {
     if (out){
         dessine(out ,a);
         fclose(out);
-        system("dot -Tpdf arbre.dot -o arbre.pdf");
+        system("dot -Tpdf arbre.dot -o arbre1.pdf");
     }
     else
         fprintf(stderr, "fichier non trouvé\n");
@@ -324,6 +426,7 @@ int main(int argc, char * argv[]){
 
     FILE * text;
     FILE * dico;
+    char mot[20];
 
     arbre = creer_ATR_vide();
 
@@ -332,6 +435,27 @@ int main(int argc, char * argv[]){
     if(dico)
         arbre = remplis_arbre(dico);
     //afficher_ATR(arbre);
+    //creePDF(arbre);
+
+
+    afficher_ATR(arbre); 
+
+    supprimer_dans_ATR(&arbre, "de");
+
+    printf("\n\n");
+
+    supprimer_dans_ATR(&arbre, "apres");
+
+    printf("\n\n");
+
+    supprimer_dans_ATR(&arbre, "cherbourg");
+
+    printf("\n\n");
+
+    supprimer_dans_ATR(&arbre, "ameli");
+
+    printf("\n\n");
+
     creePDF(arbre);
     /*if(text && arbre)
         erreurs = correction(arbre, text);
