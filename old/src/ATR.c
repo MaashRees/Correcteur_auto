@@ -16,7 +16,7 @@ ATR creer_ATR_vide(void){
 
 
 void liberer_ATR(ATR * A){
-    ATR * tmp;
+    /*ATR * tmp;
     if(*A){
         
         liberer_ATR(&((*A)->fg));
@@ -24,7 +24,29 @@ void liberer_ATR(ATR * A){
         liberer_ATR(&((*A)->fd));
 
         free(*A);
+    }*/
+    if(*A){
+            if ((*A)->fd) != NULL){
+    
+            liberer_ATR(&((*A)->fd));
+            
+            free(*A);
+        }
+        if ((*A)->fg) != NULL){
+    
+            liberer_ATR(&((*A)->fg));
+            
+            free(*A);
+        }
+        if ((*A)->fils) != NULL){
+    
+            liberer_ATR(&((*A)->fils));
+            
+            free(*A);
+        }
+        *A = NULL;
     }
+
 }
 
 int est_vide_ATR(ATR A){

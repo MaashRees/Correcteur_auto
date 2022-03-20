@@ -24,5 +24,9 @@ int main(int argc, char * argv[]){
         printf("Mots mal orthographiés : \n");
         afficher_Liste(erreurs);
     }
+
+    liberer_ATR(&arbre);
+
+    printf("arbre : %p\n", arbre);
     return 0;   
 }
