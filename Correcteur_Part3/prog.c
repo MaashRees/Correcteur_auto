@@ -54,6 +54,7 @@ void liberer_Liste(Liste * L){
     while(*L){
         tmp = *L;
         *L = (*L)->suivant;
+        free(tmp->mot);
         free(tmp); /*liberation de la cellule*/
     }
     free(*L);/*liberation de la liste*/
@@ -142,6 +143,7 @@ NoeudBK * alloue_ArbreBK(char * mot){
 }
 
 int inserer_dans_ArbreBK_aux(ArbreBK *A, char * mot, int dist){
+    
     if(*A == NULL){
         (*A) = alloue_ArbreBK(mot);
         if(*A == NULL){
@@ -151,12 +153,27 @@ int inserer_dans_ArbreBK_aux(ArbreBK *A, char * mot, int dist){
             return 1;
         }
     }
+
     if(strcmp((*A)->mot, mot) == 0){
         printf("mot existe deja aux\n");
         return 0;
     }
     if((*A)->valeur == dist){
+        printf("on calcule la nouvelle valeur de la lev entre %s et a inse %s\n\n", (*A)->mot, mot);
         dist = Levenshtein((*A)->mot, mot);
+        if((*A)->filsG){
+            if (dist < ((*A)->filsG)->valeur){
+                NoeudBK * new = alloue_ArbreBK(mot);
+                if(new != NULL){
+                    new->frereD = (*A)->filsG;
+                    (*A)->filsG = new;
+                    new->valeur = dist;
+                    return 1;
+                }
+                return 0;
+            }
+        }
+        
         return inserer_dans_ArbreBK_aux(&((*A)->filsG), mot, dist);
     }
     if((*A)->valeur < dist){
@@ -175,6 +192,7 @@ int inserer_dans_ArbreBK_aux(ArbreBK *A, char * mot, int dist){
     }
     return 0;
 }
+
 int inserer_dans_ArbreBK(ArbreBK * A, char * mot){
     if(*A == NULL){
         *A = alloue_ArbreBK(mot);
@@ -211,24 +229,46 @@ Liste rechercher_dans_ArbreBK_aux(ArbreBK A, char * mot, int dist){
     if(A == NULL){
         return NULL;
     }
-    if(strcmp(A->mot, mot) == 0){
+    /*if(strcmp(A->mot, mot) == 0){
         printf("Mot trouvé\n");
         Liste new = allouer_Cellule(mot);
         return new;
-    }
+    }*/
+    /*
+    printf("\nmot dans ce noued : %s : %d\n", A->mot, A->valeur);
     if(dist < A->valeur){
-        printf("distance eleve mot pas trouvé\n");
-        return NULL;
+        printf("distance eleve mot pas trouvé : %d\n", dist);
+        //return NULL;
+        return rechercher_dans_ArbreBK_aux(A->filsG, mot, dist);
     }
     if(dist == A->valeur){
-        printf("mot surement dans le fils de %s\n", (A->mot));
+        printf("mot surement dans le fils de %s : %d\n", (A->mot), dist);
         dist = Levenshtein(A->mot, mot);
         return rechercher_dans_ArbreBK_aux(A->filsG, mot, dist);
     }
     if(dist > A->valeur){
-        printf("mot surement dans le frere de %s\n", (A->mot));
+        printf("mot surement dans le frere de %s : %d\n", (A->mot), dist);
         return rechercher_dans_ArbreBK_aux(A->frereD, mot, dist);
     }
+    */
+    
+    while(A && dist >= A->valeur){
+        if(strcmp(A->mot, mot) == 0){
+            printf("Mot trouvé\n");
+            Liste new = allouer_Cellule(mot);
+            return new;
+        }
+        if(dist == A->valeur){
+            A = A->filsG;
+            if(A)
+                dist = Levenshtein(A->mot, mot);
+            else
+                return NULL;
+        } else {
+            A = A->frereD;
+        }
+    }
+    return NULL;
 }
 
 Liste rechercher_dans_ArbreBK(ArbreBK A, char * mot){
@@ -248,9 +288,40 @@ Liste rechercher_dans_ArbreBK(ArbreBK A, char * mot){
 
 ArbreBK creer_ArbreBK(FILE * dico){
 
+    assert(dico != NULL);
+
+    char mot[20];
+    ArbreBK arbre;
+    arbre = NULL;
+
+    while(fscanf(dico,"%s",mot)!=EOF){
+        /*insertion du mot recupere dans l'arbre*/
+        inserer_dans_ArbreBK(&arbre, mot);
+    }
+    rewind(dico);
+    return arbre;
 }
 
-void liberer_ArbreBK(ArbreBK * A);
+void liberer_ArbreBK(ArbreBK * A){
+    if(*A != NULL){
+        if((*A)->filsG == NULL && (*A)->frereD == NULL){
+            free((*A)->mot);
+            free(*A);
+            *A = NULL;
+            return;
+        }
+        if((*A)->filsG != NULL){
+            liberer_ArbreBK(&((*A)->filsG));
+        }
+        if((*A)->frereD != NULL){
+            liberer_ArbreBK(&((*A)->frereD));
+        }
+        free((*A)->mot);
+        free(*A);
+        *A = NULL;
+        return;
+    }
+}
 
 void afficher_ArbreBK(ArbreBK A){
     if(A){
@@ -269,6 +340,7 @@ int main(int argc, char * argv[]){
 
     ArbreBK arbre = NULL;
 
+    /*
     printf("insertion de %s : %d\n", "une", inserer_dans_ArbreBK(&arbre, "une"));
     printf("insertion de %s : %d\n", "foix", inserer_dans_ArbreBK(&arbre, "fois"));
     printf("insertion de %s : %d\n", "foie", inserer_dans_ArbreBK(&arbre, "foie"));
@@ -285,7 +357,7 @@ int main(int argc, char * argv[]){
     afficher_ArbreBK(arbre);
 
     printf("\n\n==================recherche==============================\n\n");
-
+    
     printf("recherche de %s : %p\n", "une", rechercher_dans_ArbreBK(arbre, "une"));
     printf("recherche de %s : %p\n", "fois", rechercher_dans_ArbreBK(arbre, "fois"));
     printf("recherche de %s : %p\n", "foie", rechercher_dans_ArbreBK(arbre, "foie"));
@@ -298,5 +370,32 @@ int main(int argc, char * argv[]){
     printf("recherche de %s : %p\n", "foi", rechercher_dans_ArbreBK(arbre, "foi"));
     printf("recherche de %s : %p\n", "est", rechercher_dans_ArbreBK(arbre, "est"));
     printf("recherche de %s : %p\n", "que", rechercher_dans_ArbreBK(arbre, "que"));
+
+    */
+    FILE * dico;
+
+    int dmin;
+
+
+    dico = fopen(argv[1], "r");
+    if(dico == NULL){
+        fprintf(stderr,"ta fail ouverture du dico\n");
+        return 0;
+    }
+
+    if(dico){
+        arbre = creer_ArbreBK(dico);
+        //creePDF(arbre);
+    }
+
+    printf("recherche de %s : %p\n", "deux", rechercher_dans_ArbreBK(arbre, "deux"));
+    printf("recherche de %s : %p\n", "sur", rechercher_dans_ArbreBK(arbre, "sur"));
+
+    printf("recherche de %s : %p\n", "saint", rechercher_dans_ArbreBK(arbre, "saint"));
+
+    liberer_ArbreBK(&arbre);
+    
+    afficher_ArbreBK(arbre);
+
     return 0;
 }
